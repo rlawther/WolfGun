@@ -26,7 +26,7 @@ def redraw():
     global angle
 
     print "draw"
-    canvas.itemconfig(text, text='Angle : %d' % angle)
+    canvas.itemconfig(text, text='Angle : %.1f' % angle)
     print angle
     (x, y) = joystick
     print x, y
@@ -56,12 +56,12 @@ def getserial():
     
     data = serialport.read(100)
     lines = data.split('\n')
-    for l in lines:
+    for l in lines[:-1]:
         if l.startswith('euler'):
             print l
             toks = l.split()
             try:
-                angle = int(toks[1])
+                angle = float(toks[1])
             except:
                 pass
         elif l.startswith('nun'):
