@@ -166,7 +166,7 @@ void setup() {
     // initialize serial communication
     // (115200 chosen because it is required for Teapot Demo output, but it's
     // really up to you depending on your project)
-    Serial.begin(57600);
+    Serial.begin(115200);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3v or Ardunio
@@ -184,10 +184,12 @@ void setup() {
     Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
     // wait for ready
+    /*
     Serial.println(F("\nSend any character to begin DMP programming and demo: "));
     while (Serial.available() && Serial.read()); // empty buffer
     while (!Serial.available()); // wait for data
     while (Serial.available() && Serial.read()); // empty buffer again
+    */
 
     // load and configure the DMP
     Serial.println(F("Initializing DMP..."));
@@ -236,6 +238,28 @@ send_zero ()
   Wire.endTransmission ();	// stop transmitting
 }
 
+void readNunchuckData()
+{
+    Wire.requestFrom (0x52, 6);	// request data from nunchuck
+    while (Wire.available ())
+      {
+        outbuf[cnt] = nunchuk_decode_byte (Wire.read ());	// receive byte as an integer
+        //outbuf[cnt] = Wire.read ();	// receive byte as an integer
+        //digitalWrite (ledPin, HIGH);	// sets the LED on
+        cnt++;
+      }
+  
+    // If we recieved the 6 bytes, then go print them
+    if (cnt >= 5)
+      {
+        print ();
+      }
+  
+    cnt = 0;
+    send_zero (); // send the request for next bytes
+    //delay (100); 
+}
+
 // ================================================================
 // === MAIN PROGRAM LOOP ===
 // ================================================================
@@ -243,6 +267,7 @@ send_zero ()
 void loop() {
     // if programming failed, don't try to do anything
     if (!dmpReady) return;
+    readNunchuckData();
 
     // wait for MPU interrupt or extra packet(s) available
     while (!mpuInterrupt && fifoCount < packetSize) {
@@ -256,24 +281,7 @@ void loop() {
         // .
         // .
         // .
-        Wire.requestFrom (0x52, 6);	// request data from nunchuck
-        while (Wire.available ())
-          {
-            outbuf[cnt] = nunchuk_decode_byte (Wire.read ());	// receive byte as an integer
-            //outbuf[cnt] = Wire.read ();	// receive byte as an integer
-            //digitalWrite (ledPin, HIGH);	// sets the LED on
-            cnt++;
-          }
-      
-        // If we recieved the 6 bytes, then go print them
-        if (cnt >= 5)
-          {
-            print ();
-          }
-      
-        cnt = 0;
-        send_zero (); // send the request for next bytes
-        delay (100); 
+
     }
 
     // reset interrupt flag and get INT_STATUS byte
@@ -319,11 +327,13 @@ void loop() {
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetEuler(euler, &q);
             Serial.print("euler\t");
+ 
             Serial.print(euler[0] * 180/M_PI);
             Serial.print("\t");
             Serial.print(euler[1] * 180/M_PI);
             Serial.print("\t");
             Serial.println(euler[2] * 180/M_PI);
+            
         #endif
 
         #ifdef OUTPUT_READABLE_YAWPITCHROLL
@@ -387,7 +397,7 @@ void loop() {
         blinkState = !blinkState;
         digitalWrite(LED_PIN, blinkState);
         //print();
-        delay(20);
+        //delay(20);
         
     }
 }
@@ -456,6 +466,7 @@ print ()
       accel_z_axis += 1;
     }
 
+  Serial.print("nun\t");
   Serial.print (joy_x_axis, DEC);
   Serial.print ("\t");
 

@@ -44,7 +44,7 @@ def redraw():
         canvas.itemconfig(circ4, fill='red')
     else:
         canvas.itemconfig(circ4, fill='black')
-    root.after(1000, redraw)
+    root.after(100, redraw)
 
 def getserial():
     global root
@@ -58,7 +58,7 @@ def getserial():
     lines = data.split('\n')
     for l in lines[:-1]:
         if l.startswith('euler'):
-            print l
+            #print l
             toks = l.split()
             try:
                 angle = float(toks[1])
@@ -75,7 +75,7 @@ def getserial():
                 buttons = (c, z)
             except:
                 pass
-    root.after(100, getserial)
+    root.after(10, getserial)
 
     
 if __name__ == '__main__':
