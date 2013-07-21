@@ -12,6 +12,7 @@ serialport = None
 canvas = None
 joystick = (128, 128)
 buttons = (2, 2)
+angle = 0
 
 def drawcircle(canv, x, y, rad, filltype):
     # changed this to return the ID
@@ -22,8 +23,11 @@ def redraw():
     global canvas
     global joystick
     global buttons
+    global angle
 
     print "draw"
+    canvas.itemconfig(text, text='Angle : %d' % angle)
+    print angle
     (x, y) = joystick
     print x, y
     x = int((x / 256.0) * 120) + 40
@@ -47,13 +51,19 @@ def getserial():
     global serialport
     global joystick
     global buttons
+    global angle
     #print "serial"
     
     data = serialport.read(100)
     lines = data.split('\n')
     for l in lines:
         if l.startswith('euler'):
-            pass
+            print l
+            toks = l.split()
+            try:
+                angle = int(toks[1])
+            except:
+                pass
         elif l.startswith('nun'):
             toks = l.split()
             try:
@@ -73,7 +83,7 @@ if __name__ == '__main__':
     canvas = Canvas(root, width=300, height=200, bg='white')
     canvas.pack()
     canvas.pack(expand=YES, fill=BOTH)
-    #text = canvas.create_text(50,10, text="tk test")
+    text = canvas.create_text(50,10, text="Angle : ---")
 
     circ1=drawcircle(canvas,100,100,60, 'blue')          
     circ2=drawcircle(canvas,100,100,20, 'red')
