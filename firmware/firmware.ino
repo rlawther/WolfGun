@@ -143,6 +143,8 @@ uint8_t outbuf[6];		// array to store arduino output
 uint8_t zero = 0x00;
 int cnt = 0;
 
+uint8_t packetBuffer[16];
+
 
 // ================================================================
 // === INTERRUPT DETECTION ROUTINE ===
@@ -160,13 +162,16 @@ void dmpDataReady() {
 // ================================================================
 
 void setup() {
+    pinMode(3, INPUT);           // set pin to input
+    digitalWrite(3, HIGH);       // turn on pullup resistors
+  
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
 
     // initialize serial communication
     // (115200 chosen because it is required for Teapot Demo output, but it's
     // really up to you depending on your project)
-    Serial.begin(115200);
+    Serial.begin(9600);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3v or Ardunio
@@ -249,11 +254,13 @@ void readNunchuckData()
         cnt++;
       }
   
-    // If we recieved the 6 bytes, then go print them
+    // If we recieved the 6 bytes, then go print thema
+    /*
     if (cnt >= 5)
       {
         print ();
       }
+    */  
   
     cnt = 0;
     send_zero (); // send the request for next bytes
@@ -263,12 +270,12 @@ void readNunchuckData()
 // ================================================================
 // === MAIN PROGRAM LOOP ===
 // ================================================================
-
+int trigger;
 void loop() {
     // if programming failed, don't try to do anything
     if (!dmpReady) return;
     readNunchuckData();
-
+    trigger = digitalRead(3);
     // wait for MPU interrupt or extra packet(s) available
     while (!mpuInterrupt && fifoCount < packetSize) {
         // other program behavior stuff here
@@ -326,6 +333,7 @@ void loop() {
             // display Euler angles in degrees
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetEuler(euler, &q);
+            /*
             Serial.print("euler\t");
  
             Serial.print(euler[0] * 180/M_PI);
@@ -333,6 +341,9 @@ void loop() {
             Serial.print(euler[1] * 180/M_PI);
             Serial.print("\t");
             Serial.println(euler[2] * 180/M_PI);
+            */
+            print_sensors();
+            //Serial.print("012301230123000\n");
             
         #endif
 
@@ -416,13 +427,22 @@ nunchuk_decode_byte (char x)
 // on the last 2 bits.  That is why I
 // multiply them by 2 * 2
 void
-print ()
+print_sensors ()
 {
   int joy_x_axis = outbuf[0];
   int joy_y_axis = outbuf[1];
+  /*
   int accel_x_axis = outbuf[2] * 2 * 2; 
   int accel_y_axis = outbuf[3] * 2 * 2;
   int accel_z_axis = outbuf[4] * 2 * 2;
+  */
+  Serial.print("gun\t");
+  Serial.print(euler[0] * 180/M_PI);
+  Serial.print("\t");
+  Serial.print(euler[1] * 180/M_PI);
+  Serial.print("\t");
+  Serial.print(euler[2] * 180/M_PI);  
+  Serial.print("\t");
 
   int z_button = 0;
   int c_button = 0;
@@ -438,7 +458,7 @@ print ()
     {
       c_button = 1;
     }
-
+  /*
   if ((outbuf[5] >> 2) & 1)
     {
       accel_x_axis += 2;
@@ -465,14 +485,14 @@ print ()
     {
       accel_z_axis += 1;
     }
-
-  Serial.print("nun\t");
+  */
   Serial.print (joy_x_axis, DEC);
   Serial.print ("\t");
 
   Serial.print (joy_y_axis, DEC);
   Serial.print ("\t");
 
+  /*
   Serial.print (accel_x_axis, DEC);
   Serial.print ("\t");
 
@@ -481,11 +501,102 @@ print ()
 
   Serial.print (accel_z_axis, DEC);
   Serial.print ("\t");
+  */
 
   Serial.print (z_button, DEC);
   Serial.print ("\t");
 
   Serial.print (c_button, DEC);
+  Serial.print ("\t");
+  Serial.print (trigger, DEC);
+  Serial.print ("\t");
+
+  Serial.print ("\r\n");
+}
+
+void
+print_sensors_binary ()
+{
+  int joy_x_axis = outbuf[0];
+  int joy_y_axis = outbuf[1];
+  /*
+  int accel_x_axis = outbuf[2] * 2 * 2; 
+  int accel_y_axis = outbuf[3] * 2 * 2;
+  int accel_z_axis = outbuf[4] * 2 * 2;
+  */
+  Serial.print("gun\t");
+  Serial.print(euler[0] * 180/M_PI);
+  Serial.print("\t");
+  Serial.print(euler[1] * 180/M_PI);
+  Serial.print("\t");
+  Serial.print(euler[2] * 180/M_PI);  
+  Serial.print("\t");
+
+  int z_button = 0;
+  int c_button = 0;
+
+ // byte outbuf[5] contains bits for z and c buttons
+ // it also contains the least significant bits for the accelerometer data
+ // so we have to check each bit of byte outbuf[5]
+  if ((outbuf[5] >> 0) & 1)
+    {
+      z_button = 1;
+    }
+  if ((outbuf[5] >> 1) & 1)
+    {
+      c_button = 1;
+    }
+  /*
+  if ((outbuf[5] >> 2) & 1)
+    {
+      accel_x_axis += 2;
+    }
+  if ((outbuf[5] >> 3) & 1)
+    {
+      accel_x_axis += 1;
+    }
+
+  if ((outbuf[5] >> 4) & 1)
+    {
+      accel_y_axis += 2;
+    }
+  if ((outbuf[5] >> 5) & 1)
+    {
+      accel_y_axis += 1;
+    }
+
+  if ((outbuf[5] >> 6) & 1)
+    {
+      accel_z_axis += 2;
+    }
+  if ((outbuf[5] >> 7) & 1)
+    {
+      accel_z_axis += 1;
+    }
+  */
+  Serial.print (joy_x_axis, DEC);
+  Serial.print ("\t");
+
+  Serial.print (joy_y_axis, DEC);
+  Serial.print ("\t");
+
+  /*
+  Serial.print (accel_x_axis, DEC);
+  Serial.print ("\t");
+
+  Serial.print (accel_y_axis, DEC);
+  Serial.print ("\t");
+
+  Serial.print (accel_z_axis, DEC);
+  Serial.print ("\t");
+  */
+
+  Serial.print (z_button, DEC);
+  Serial.print ("\t");
+
+  Serial.print (c_button, DEC);
+  Serial.print ("\t");
+  Serial.print (trigger, DEC);
   Serial.print ("\t");
 
   Serial.print ("\r\n");

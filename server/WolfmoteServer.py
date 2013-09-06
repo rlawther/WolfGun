@@ -1,8 +1,8 @@
 import serial
 from Tkinter import *
 
-PORT = 'COM3'
-BAUDRATE = 115200
+PORT = 'COM5'
+BAUDRATE = 9600
 
 print "Wolfmote Server"
 print "Port :", PORT, "Baudrate : ", BAUDRATE
@@ -11,7 +11,7 @@ root = None
 serialport = None
 canvas = None
 joystick = (128, 128)
-buttons = (2, 2)
+buttons = (2, 2, 2)
 angle = 0
 
 def drawcircle(canv, x, y, rad, filltype):
@@ -34,7 +34,7 @@ def redraw():
     y = int((1 - (y / 256.0)) * 120) + 40
     canvas.coords(circ2, x - 20, y - 20, x + 20, y + 20)
 
-    (c, z) = buttons
+    (c, z, trigger) = buttons
     print c, z
     if c == 0:
         canvas.itemconfig(circ3, fill='red')
@@ -44,6 +44,10 @@ def redraw():
         canvas.itemconfig(circ4, fill='red')
     else:
         canvas.itemconfig(circ4, fill='black')
+    if trigger == 0:
+        canvas.itemconfig(circ5, fill='red')
+    else:
+        canvas.itemconfig(circ5, fill='black')
     root.after(100, redraw)
 
 def getserial():
@@ -57,11 +61,18 @@ def getserial():
     data = serialport.read(100)
     lines = data.split('\n')
     for l in lines[:-1]:
-        if l.startswith('euler'):
-            #print l
+        if l.startswith('gun'):
+            print l
             toks = l.split()
             try:
                 angle = float(toks[1])
+                x = int(toks[4])
+                y = int(toks[5])
+                c = int(toks[6])
+                z = int(toks[7])
+                trigger = int(toks[8])
+                joystick = (x, y)
+                buttons = (c, z, trigger)
             except:
                 pass
         elif l.startswith('nun'):
@@ -89,6 +100,7 @@ if __name__ == '__main__':
     circ2=drawcircle(canvas,100,100,20, 'red')
     circ3=drawcircle(canvas,200,100,10, 'black')
     circ4=drawcircle(canvas,200,140,10, 'black')
+    circ5=drawcircle(canvas,200,180,10, 'black')
 
     serialport = serial.Serial(PORT, BAUDRATE)
     root.after(1000, redraw)
