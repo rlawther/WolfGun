@@ -143,7 +143,7 @@ uint8_t outbuf[6];		// array to store arduino output
 uint8_t zero = 0x00;
 int cnt = 0;
 
-uint8_t packetBuffer[16];
+uint8_t packetBuffer[20];
 
 
 // ================================================================
@@ -164,6 +164,8 @@ void dmpDataReady() {
 void setup() {
     pinMode(3, INPUT);           // set pin to input
     digitalWrite(3, HIGH);       // turn on pullup resistors
+    
+    strcpy((char *)packetBuffer, "Wolf");
   
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
@@ -342,7 +344,8 @@ void loop() {
             Serial.print("\t");
             Serial.println(euler[2] * 180/M_PI);
             */
-            print_sensors();
+            //print_sensors();
+            print_sensors_binary();
             //Serial.print("012301230123000\n");
             
         #endif
@@ -517,87 +520,12 @@ print_sensors ()
 void
 print_sensors_binary ()
 {
-  int joy_x_axis = outbuf[0];
-  int joy_y_axis = outbuf[1];
-  /*
-  int accel_x_axis = outbuf[2] * 2 * 2; 
-  int accel_y_axis = outbuf[3] * 2 * 2;
-  int accel_z_axis = outbuf[4] * 2 * 2;
-  */
-  Serial.print("gun\t");
-  Serial.print(euler[0] * 180/M_PI);
-  Serial.print("\t");
-  Serial.print(euler[1] * 180/M_PI);
-  Serial.print("\t");
-  Serial.print(euler[2] * 180/M_PI);  
-  Serial.print("\t");
+  
+  memcpy(&packetBuffer[4], euler, sizeof(float)*3);
+  packetBuffer[16] = outbuf[0];
+  packetBuffer[17] = outbuf[1];
+  outbuf[5] |= (trigger << 2);
+  packetBuffer[18] = outbuf[5];
+  Serial.write(packetBuffer, 20);
 
-  int z_button = 0;
-  int c_button = 0;
-
- // byte outbuf[5] contains bits for z and c buttons
- // it also contains the least significant bits for the accelerometer data
- // so we have to check each bit of byte outbuf[5]
-  if ((outbuf[5] >> 0) & 1)
-    {
-      z_button = 1;
-    }
-  if ((outbuf[5] >> 1) & 1)
-    {
-      c_button = 1;
-    }
-  /*
-  if ((outbuf[5] >> 2) & 1)
-    {
-      accel_x_axis += 2;
-    }
-  if ((outbuf[5] >> 3) & 1)
-    {
-      accel_x_axis += 1;
-    }
-
-  if ((outbuf[5] >> 4) & 1)
-    {
-      accel_y_axis += 2;
-    }
-  if ((outbuf[5] >> 5) & 1)
-    {
-      accel_y_axis += 1;
-    }
-
-  if ((outbuf[5] >> 6) & 1)
-    {
-      accel_z_axis += 2;
-    }
-  if ((outbuf[5] >> 7) & 1)
-    {
-      accel_z_axis += 1;
-    }
-  */
-  Serial.print (joy_x_axis, DEC);
-  Serial.print ("\t");
-
-  Serial.print (joy_y_axis, DEC);
-  Serial.print ("\t");
-
-  /*
-  Serial.print (accel_x_axis, DEC);
-  Serial.print ("\t");
-
-  Serial.print (accel_y_axis, DEC);
-  Serial.print ("\t");
-
-  Serial.print (accel_z_axis, DEC);
-  Serial.print ("\t");
-  */
-
-  Serial.print (z_button, DEC);
-  Serial.print ("\t");
-
-  Serial.print (c_button, DEC);
-  Serial.print ("\t");
-  Serial.print (trigger, DEC);
-  Serial.print ("\t");
-
-  Serial.print ("\r\n");
 }

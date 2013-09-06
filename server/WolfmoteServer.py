@@ -1,5 +1,6 @@
 import serial
 from Tkinter import *
+import struct
 
 PORT = 'COM5'
 BAUDRATE = 9600
@@ -25,17 +26,17 @@ def redraw():
     global buttons
     global angle
 
-    print "draw"
+    #print "draw"
     canvas.itemconfig(text, text='Angle : %.1f' % angle)
-    print angle
+    #print angle
     (x, y) = joystick
-    print x, y
+    #print x, y
     x = int((x / 256.0) * 120) + 40
     y = int((1 - (y / 256.0)) * 120) + 40
     canvas.coords(circ2, x - 20, y - 20, x + 20, y + 20)
 
     (c, z, trigger) = buttons
-    print c, z
+    #print c, z
     if c == 0:
         canvas.itemconfig(circ3, fill='red')
     else:
@@ -88,7 +89,30 @@ def getserial():
                 pass
     root.after(10, getserial)
 
+def getserial_binary():
+    global root
+    global serialport
+    global joystick
+    global buttons
+    global angle
+    #print "serial"
     
+    data = serialport.read(100)
+    startIndex = data.find('Wolf')
+    #print startIndex
+    if startIndex != -1:
+        packet = data[startIndex+4:startIndex+19]
+        (angle, _, _, x, y, b) = struct.unpack('<fffBBB', packet)
+        joystick = (x, y)
+        buttons = (b & 0x01, b & 0x02, b & 0x04)
+
+        if not b & 0x04:
+            print "."
+
+    root.after(10, getserial_binary)
+
+    
+ 
 if __name__ == '__main__':
     root = Tk()
     canvas = Canvas(root, width=300, height=200, bg='white')
@@ -104,7 +128,7 @@ if __name__ == '__main__':
 
     serialport = serial.Serial(PORT, BAUDRATE)
     root.after(1000, redraw)
-    root.after(100, getserial)
+    root.after(100, getserial_binary)
     root.mainloop()
 
 '''
