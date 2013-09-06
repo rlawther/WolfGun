@@ -3,7 +3,7 @@ from Tkinter import *
 import struct
 
 PORT = 'COM5'
-BAUDRATE = 9600
+BAUDRATE = 115200
 
 print "Wolfmote Server"
 print "Port :", PORT, "Baudrate : ", BAUDRATE
@@ -89,27 +89,55 @@ def getserial():
                 pass
     root.after(10, getserial)
 
+def findPacketMarker():
+    global serialport
+
+    marker = 'Wolf'
+    index = 0
+    print "x",
+
+    while index < 4:
+        char = serialport.read()
+        if char == marker[index]:
+            index += 1
+        else:
+            index = 0
+
 def getserial_binary():
     global root
     global serialport
     global joystick
     global buttons
     global angle
+    global aligned
     #print "serial"
+
+    if serialport.inWaiting() > 40:
+        serialport.read(20)
+
+    if not aligned:
+        findPacketMarker()
+        aligned = True
+        data = 'Wolf'
+    else:
+        data = ''
     
-    data = serialport.read(100)
-    startIndex = data.find('Wolf')
-    #print startIndex
-    if startIndex != -1:
-        packet = data[startIndex+4:startIndex+19]
-        (angle, _, _, x, y, b) = struct.unpack('<fffBBB', packet)
+    while len(data) < 20:
+        newdata = serialport.read(20 - len(data))
+        data = data + newdata
+    #print len(data), serialport.inWaiting()
+    if not data[0:4] == 'Wolf':
+        print "Packet error"
+        aligned = False
+    else: 
+        (_, angle, _, _, x, y, b, _) = struct.unpack('<ffffBBBB', data)
         joystick = (x, y)
         buttons = (b & 0x01, b & 0x02, b & 0x04)
 
         if not b & 0x04:
-            print "."
+            print ".",
 
-    root.after(10, getserial_binary)
+    #root.after(0, getserial_binary)
 
     
  
@@ -126,10 +154,15 @@ if __name__ == '__main__':
     circ4=drawcircle(canvas,200,140,10, 'black')
     circ5=drawcircle(canvas,200,180,10, 'black')
 
-    serialport = serial.Serial(PORT, BAUDRATE)
+    serialport = serial.Serial(PORT, BAUDRATE, timeout=0)
+    aligned = False
+    '''
     root.after(1000, redraw)
     root.after(100, getserial_binary)
     root.mainloop()
+    '''
+    while True:
+        getserial_binary()
 
 '''
 while True:
