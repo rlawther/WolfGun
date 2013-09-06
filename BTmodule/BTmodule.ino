@@ -12,7 +12,7 @@ void setup() {
   delay(1000);
   Serial.print("AT");
   delay(1000);
-  Serial.print("AT+NAMEWolfgun"); 
+  Serial.print("AT+BAUD8"); 
 } 
 
 void loop()
